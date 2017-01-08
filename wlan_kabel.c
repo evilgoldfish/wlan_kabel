@@ -42,15 +42,15 @@ static int retrieveifindex(char*name) {
 
 static void printmac(void* src, char* title) {
 	unsigned char* karl= src;
-        printf("%s: %02x:%02x:%02x:%02x:%02x:%02x\n",title,karl[0],karl[1],karl[2],karl[3],karl[4],karl[5]);
+	printf("%s: %02x:%02x:%02x:%02x:%02x:%02x\n",title,karl[0],karl[1],karl[2],karl[3],karl[4],karl[5]);
 }
 
 // parse MAC address from str to dest
 static void parsemac(char* str, void* dest) {
-        unsigned int karl[6];                                                                                                                                                                
+	unsigned int karl[6];
 	int i;
-        sscanf(str,"%02x:%02x:%02x:%02x:%02x:%02x",&karl[0],&karl[1],&karl[2],&karl[3],&karl[4],&karl[5]);                                                                               
-        printf("%02x:%02x:%02x:%02x:%02x:%02x\n",karl[0],karl[1],karl[2],karl[3],karl[4],karl[5]);                                                                                           
+	sscanf(str,"%02x:%02x:%02x:%02x:%02x:%02x",&karl[0],&karl[1],&karl[2],&karl[3],&karl[4],&karl[5]);
+	printf("%02x:%02x:%02x:%02x:%02x:%02x\n",karl[0],karl[1],karl[2],karl[3],karl[4],karl[5]);
 	for (i=0;i<6;++i) ((unsigned char*)dest)[i]=(unsigned char)karl[i];
 }
 
@@ -59,7 +59,7 @@ static void readmac(char* iface, void* dest) {
 	// int ifindex = retrieveifindex(s,iface);
 	struct ifreq karl;
 	int i;
-	int s = socket( AF_INET , SOCK_DGRAM , 0 ); 
+	int s = socket( AF_INET , SOCK_DGRAM , 0 );
 	bzero(&karl,sizeof(karl));
 	strncpy(karl.ifr_name,iface,IFNAMSIZ);
 	perror(karl.ifr_name);
@@ -73,33 +73,33 @@ static void readmac(char* iface, void* dest) {
 
 // Create packet socket
 static int get_rawsocket(char* iface, int socktype) {
-        struct sockaddr_ll b;
-        struct packet_mreq mr;
-        int i;
+	struct sockaddr_ll b;
+	struct packet_mreq mr;
+	int i;
 	bzero(&b,sizeof(b));
-        b.sll_family=AF_PACKET;
-        b.sll_protocol=htons(ETH_P_ALL);
-        bzero(&mr,sizeof(mr));  
-        int swlan = socket(PF_PACKET,socktype,htons(ETH_P_ALL));
+	b.sll_family=AF_PACKET;
+	b.sll_protocol=htons(ETH_P_ALL);
+	bzero(&mr,sizeof(mr));
+	int swlan = socket(PF_PACKET,socktype,htons(ETH_P_ALL));
 
-        int ifindex = retrieveifindex(iface);
-        b.sll_ifindex=ifindex;
-        b.sll_protocol=htons(ETH_P_ALL);
-        int err = bind(swlan,(const struct sockaddr *)&b,sizeof(b));
-        if (err!=0) {
-                perror("error bind");
+	int ifindex = retrieveifindex(iface);
+	b.sll_ifindex=ifindex;
+	b.sll_protocol=htons(ETH_P_ALL);
+	int err = bind(swlan,(const struct sockaddr *)&b,sizeof(b));
+	if (err!=0) {
+		perror("error bind");
 		exit(-1);
-        }
-        mr.mr_ifindex=ifindex;
-        mr.mr_type=PACKET_MR_PROMISC;
-        if (setsockopt(swlan,SOL_PACKET,1,&mr,sizeof(mr))!=0) {
-                perror("error setsockopt");
+	}
+	mr.mr_ifindex=ifindex;
+	mr.mr_type=PACKET_MR_PROMISC;
+	if (setsockopt(swlan,SOL_PACKET,1,&mr,sizeof(mr))!=0) {
+		perror("error setsockopt");
 		exit(-1);
-        }
-        if (fcntl(swlan,F_SETFL,O_NONBLOCK)==-1) {
-                perror("error nonblock");
+	}
+	if (fcntl(swlan,F_SETFL,O_NONBLOCK)==-1) {
+		perror("error nonblock");
 		exit(-1);
-        }
+	}
 	return swlan;
 }
 
@@ -153,7 +153,7 @@ static void forward_packet_eth() {
 	int mylen = recvfrom(seth,buf,sizeof(buf),0,(struct sockaddr*)&sinfo,&froml);
 	if (mylen<0) {
 		perror("read");
-                	exit(-1);
+		exit(-1);
 	}
 	if (is_forwardable_eth(buf,mylen)) {
 		adjust_arp(buf,mylen);
