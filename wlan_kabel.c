@@ -170,6 +170,7 @@ static void forward_packet_eth() {
 int main(int argc, char* argv[]) {
 	if (argc!=4) {
 		printf("error: need 3 arguments: <wlan_if> <lan_if> <dest_mac>");
+		return 0;
 	}
 
 	swlan = get_rawsocket(argv[1],SOCK_DGRAM);
