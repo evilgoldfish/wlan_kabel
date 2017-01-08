@@ -18,6 +18,9 @@
 #include<fcntl.h>
 #include<stdlib.h>
 
+// Flag of whether to continue on packet send failure or not
+int bypassexitonsendfail;
+
 // MAC adresses of some interfaces
 static unsigned char destmac[6];
 static unsigned char wlanmac[6];
@@ -139,7 +142,9 @@ static void forward_packet_wlan() {
 	int sendlen = send(seth,buf,mylen+14,0);
 	if(sendlen<0) {
 		perror("send");
-		exit(-1);
+		if (bypassexitonsendfail == 0) {
+			exit(-1);
+		}
 	}
 }
 
@@ -162,23 +167,43 @@ static void forward_packet_eth() {
 		int sendlen = sendto(swlan,&buf[14],mylen-14,0,(const struct sockaddr *)&sinfo,sizeof(sinfo));
 		if(sendlen<0) {
 			perror("send");
-			exit(-1);
+			if (bypassexitonsendfail == 0) {
+				exit(-1);
+			}
 		}
 	}
 }
 
 int main(int argc, char* argv[]) {
-	if (argc!=4) {
-		printf("error: need 3 arguments: <wlan_if> <lan_if> <dest_mac>");
-		return 0;
+	int c;
+	char* wlanadapter;
+	char* ethernetadapter;
+	char* destinationmac;
+	while ((c = getopt(argc, argv, "b")) != -1) {
+		switch (c) {
+			case 'b':
+				bypassexitonsendfail = 1;
+				break;
+			default:
+				printf("usage: wlan_kabel [-b] <wlan_adapter> <ethernet_adapter> <dest_mac>\n");
+				exit(-1);
+		}
+	}
+	if (argc - optind == 3 && argc - optind > 0) {
+		wlanadapter = argv[optind+1];
+		ethernetadapter = argv[optind+2];
+		destinationmac = argv[optind+3];
+	} else {
+		printf("usage: wlan_kabel [-b] <wlan_adapter> <ethernet_adapter> <dest_mac>\n");
+		exit(-1);
 	}
 
-	swlan = get_rawsocket(argv[1],SOCK_DGRAM);
-	seth = get_rawsocket(argv[2],SOCK_RAW);
-	ethi = retrieveifindex(argv[2]);
-	wlani = retrieveifindex(argv[1]);
-	parsemac(argv[3],destmac);
-	readmac(argv[1],wlanmac);
+	swlan = get_rawsocket(wlanadapter,SOCK_DGRAM);
+	seth = get_rawsocket(ethernetadapter,SOCK_RAW);
+	ethi = retrieveifindex(ethernetadapter);
+	wlani = retrieveifindex(wlanadapter);
+	parsemac(destinationmac,destmac);
+	readmac(wlanadapter,wlanmac);
 	printmac(destmac,"Destination MAC");
 	printmac(wlanmac,"WLAN MAC");
 
