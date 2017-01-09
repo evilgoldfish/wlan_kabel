@@ -18,8 +18,14 @@
 #include<fcntl.h>
 #include<stdlib.h>
 
-// Flag of whether to continue on packet send failure or not
-int bypassexitonsendfail;
+// FLAGS
+// Flag of whether to continue on packet forwarding failure or not
+int bypassexitonforwardfail;
+
+// Flag of whether to print on forwarding errors (-b not required)
+// Non-forwarding related errors (such as MAC address binding failures)
+// will still be printed and cause wlan_kabel to stop.
+int noforwarderrors;
 
 // MAC adresses of some interfaces
 static unsigned char destmac[6];
@@ -132,17 +138,19 @@ static void forward_packet_wlan() {
 	bzero(&sinfo,sizeof(sinfo));
 	int froml=sizeof(sinfo);
 	int mylen = recvfrom(swlan,buf+14,sizeof(buf)-14,0,(struct sockaddr*)&sinfo,&froml);
-	if (mylen<0) {
+	if (mylen<0 && noforwarderrors == 0) {
 		perror("read");
-		exit(-1);
+		if (bypassexitonforwardfail == 0) {
+			exit(-1);
+		}
 	}
 	for (i=0;i<6;++i) buf[i]=destmac[i];
 	for (i=0;i<6;++i) buf[i+6]=sinfo.sll_addr[i];
 	memcpy(&buf[12],&(sinfo.sll_protocol),2);
 	int sendlen = send(seth,buf,mylen+14,0);
-	if(sendlen<0) {
+	if(sendlen<0 && noforwarderrors == 0) {
 		perror("send");
-		if (bypassexitonsendfail == 0) {
+		if (bypassexitonforwardfail == 0) {
 			exit(-1);
 		}
 	}
@@ -156,18 +164,20 @@ static void forward_packet_eth() {
 	bzero(&sinfo,sizeof(sinfo));
 	int froml=sizeof(sinfo);
 	int mylen = recvfrom(seth,buf,sizeof(buf),0,(struct sockaddr*)&sinfo,&froml);
-	if (mylen<0) {
+	if (mylen<0 && noforwarderrors == 0) {
 		perror("read");
-		exit(-1);
+		if (bypassexitonforwardfail == 0) {
+			exit(-1);
+		}
 	}
 	if (is_forwardable_eth(buf,mylen)) {
 		adjust_arp(buf,mylen);
 		memcpy(&(sinfo.sll_addr),buf,6);
 		sinfo.sll_ifindex=wlani;
 		int sendlen = sendto(swlan,&buf[14],mylen-14,0,(const struct sockaddr *)&sinfo,sizeof(sinfo));
-		if(sendlen<0) {
+		if(sendlen<0 && noforwarderrors == 0) {
 			perror("send");
-			if (bypassexitonsendfail == 0) {
+			if (bypassexitonforwardfail == 0) {
 				exit(-1);
 			}
 		}
@@ -179,13 +189,16 @@ int main(int argc, char* argv[]) {
 	char* wlanadapter;
 	char* ethernetadapter;
 	char* destinationmac;
-	while ((c = getopt(argc, argv, "b")) != -1) {
+	while ((c = getopt(argc, argv, "bs")) != -1) {
 		switch (c) {
 			case 'b':
-				bypassexitonsendfail = 1;
+				bypassexitonforwardfail = 1;
+				break;
+			case 's':
+				noforwarderrors = 1;
 				break;
 			default:
-				printf("usage: wlan_kabel [-b] <wlan_adapter> <ethernet_adapter> <dest_mac>\n");
+				printf("usage: wlan_kabel [-bs] <wlan_adapter> <ethernet_adapter> <dest_mac>\n");
 				exit(-1);
 		}
 	}
@@ -194,7 +207,7 @@ int main(int argc, char* argv[]) {
 		ethernetadapter = argv[optind+2];
 		destinationmac = argv[optind+3];
 	} else {
-		printf("usage: wlan_kabel [-b] <wlan_adapter> <ethernet_adapter> <dest_mac>\n");
+		printf("usage: wlan_kabel [-bs] <wlan_adapter> <ethernet_adapter> <dest_mac>\n");
 		exit(-1);
 	}
 
