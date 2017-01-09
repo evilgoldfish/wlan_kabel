@@ -23,7 +23,7 @@ You can compile WLAN_Kabel by just entering `make`. You will probably need make,
 
 To use WLAN_Kabel, you have to install it on the proxy device. Both the Wireless and the Ethernet adapter must be up, but not configured for any IP addresses. You can then start as root it like this:
 
-`# ./wlan_kabel <wlan-adapter> <ethernet-adapter> <MAC of device to connect>`
+`# ./wlan_kabel [-bs] <wlan-adapter> <ethernet-adapter> <MAC of device to connect>`
 
 Example:
 
@@ -33,10 +33,23 @@ You can then connect your computer to the proxy device with a patch cable and br
 
 WLAN_Kabel has been tested on:
 
--  ATH9K chipset with Ubuntu 10.10 
+-  ATH9K chipset with Ubuntu 10.10
 -  Ralink RT2870 on a Raspberry Pi
+
+### Flags
+
+The `-b` flag will stop wlan_kabel from exiting on forwarding errors.
+
+The `-s` flag will silence wlan_kabel and stop it from printing forwarding errors.
+
+Use these flags if you are unable to resolve `read: Network is down`, `send: Message too long` or `send: Resource temporarily unavailable` errors.
+
+Examples:
+
+`# ./wlan_kabel -b wlan0 eth0 00:22:15:49:e5:55`
+
+`# ./wlan_kabel -s wlan0 eth0 00:22:15:49:e5:55`
 
 ## License
 
 You may use this code under the conditions of the GNU GPL v2 or later.
-
