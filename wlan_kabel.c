@@ -203,9 +203,9 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	if (argc - optind == 3 && argc - optind > 0) {
-		wlanadapter = argv[optind+1];
-		ethernetadapter = argv[optind+2];
-		destinationmac = argv[optind+3];
+		wlanadapter = argv[optind+0];
+		ethernetadapter = argv[optind+1];
+		destinationmac = argv[optind+2];
 	} else {
 		printf("usage: wlan_kabel [-bs] <wlan_adapter> <ethernet_adapter> <dest_mac>\n");
 		exit(-1);
